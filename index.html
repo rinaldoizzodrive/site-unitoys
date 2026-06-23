@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: precos-22-06-v14 -->
+<!-- VERSAO: frete-cif-v15 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -311,17 +311,6 @@
         <button class="regiao-pill sel" id="pillCapital" onclick="selRegiao('Capital')">🏙️ Capital</button>
         <button class="regiao-pill" id="pillInterior" onclick="selRegiao('Interior')">🌄 Interior</button>
       </div>
-    </div>
-    <div class="form-row">
-      <label>Desconto do representante</label>
-      <select id="selDesconto">
-        <option value="0">Sem desconto</option>
-        <option value="4">4%</option>
-        <option value="8">8%</option>
-        <option value="12">12%</option>
-        <option value="16">16%</option>
-        <option value="20">20%</option>
-      </select>
     </div>
     <div class="form-btns">
       <button class="btn-confirmar btn-amarelo" onclick="confirmarRegiao()" style="flex:1">Ver preços →</button>
@@ -861,12 +850,12 @@ function atualizarCartUI(){
     const falta=PEDIDO_MINIMO-subtotal;
     aviso.style.display='block';
     aviso.classList.remove('ok');
-    document.getElementById('minimoTexto').innerHTML='⚠️ Pedido mínimo: '+fmtBRL(PEDIDO_MINIMO)+' — faltam <strong>'+fmtBRL(falta)+'</strong>. Adicione mais itens para finalizar.';
+    document.getElementById('minimoTexto').innerHTML='⚠️ Pedido mínimo: '+fmtBRL(PEDIDO_MINIMO)+' — faltam <strong>'+fmtBRL(falta)+'</strong> para fechar e ganhar <strong>frete grátis</strong>.';
     document.getElementById('minimoProgresso').style.width=Math.min(100,(subtotal/PEDIDO_MINIMO)*100)+'%';
   }else{
     aviso.style.display='block';
     aviso.classList.add('ok');
-    document.getElementById('minimoTexto').innerHTML='✅ Pedido mínimo de '+fmtBRL(PEDIDO_MINIMO)+' atingido!';
+    document.getElementById('minimoTexto').innerHTML='🎉 Parabéns! Pedido acima de '+fmtBRL(PEDIDO_MINIMO)+' — <strong>frete CIF grátis</strong> incluído!';
   }
   const btn=document.getElementById('finalizarBtn');
   btn.disabled=items.length===0||!atingiuMinimo;
@@ -986,6 +975,7 @@ function enviarPedido(){
     msg+='\n💰 *Subtotal s/IPI:* '+fmtBRL(subtotal);
     msg+='\n📊 *IPI:* '+fmtBRL(ipiTotal);
     msg+='\n✅ *Total c/IPI:* '+fmtBRL(subtotal+ipiTotal);
+    if(subtotal>=PEDIDO_MINIMO)msg+='\n🚚 *Frete CIF grátis* (pedido acima de '+fmtBRL(PEDIDO_MINIMO)+')';
   }
   if(obs)msg+='\n\n📝 *Obs:* '+obs;
   
