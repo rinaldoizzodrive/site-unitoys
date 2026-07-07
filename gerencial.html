@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: GERENCIAL-v1 -->
+<!-- VERSAO: GERENCIAL-fotos-fix-v2 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — GERENCIAL</title>
@@ -599,6 +599,9 @@ function initFotoCard(cod){
   teste.onload=()=>{
     fotoIdx[cod]=1;
     img.src=fotoUrl(cod,1);
+    img.style.display='';
+    const ic=document.getElementById('ic_'+cod);
+    if(ic)ic.style.display='none';
     const area=img.closest('.card-image-area');
     if(area){
       // Descobre total para mostrar setas/contador apenas se houver 2+
@@ -856,7 +859,8 @@ function renderCard(p){
   
   return '<div class="product-card'+(inCart?' in-cart':'')+(sem?' esgotado':'')+'" id="card_'+p.codigo+'">'
     +'<div class="card-image-area">'
-    +(img?'<img class="product-photo" id="img_'+p.codigo+'" src="'+img+'" alt="'+p.nome+'" loading="lazy" onclick="abrirLightbox(\''+p.codigo+'\')">':'<div class="cat-icon">'+p.icon+'</div>')
+    +'<img class="product-photo" id="img_'+p.codigo+'" src="'+(img||fotoUrl(p.codigo,1))+'" alt="'+p.nome+'" loading="lazy" onclick="abrirLightbox(\''+p.codigo+'\')" onerror="this.style.display=\'none\';var ic=document.getElementById(\'ic_'+p.codigo+'\');if(ic)ic.style.display=\'flex\'">'
+    +'<div class="cat-icon" id="ic_'+p.codigo+'" style="display:'+(img?'none':'flex')+'">'+p.icon+'</div>'
     +'<button class="foto-nav foto-prev" onclick="mudarFoto(event,\''+p.codigo+'\',-1)">‹</button>'
     +'<button class="foto-nav foto-next" onclick="mudarFoto(event,\''+p.codigo+'\',1)">›</button>'
     +'<div class="foto-contador" id="cont_'+p.codigo+'"></div>'
