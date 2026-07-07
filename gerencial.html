@@ -549,7 +549,7 @@ function carregarMiniatura(cod){
       }catch(e){ finish(null) }
     };
     img.onerror=()=>finish(null);
-    img.src='fotos/'+cod+'-1.jpg';
+    img.src='fotos/'+codFoto(cod)+'-1.jpg';
     // timeout de seguranca
     setTimeout(()=>finish(null),4000);
   });
@@ -568,11 +568,14 @@ async function carregarMiniaturasPedido(p){
 // ── SISTEMA DE FOTOS EXTERNAS (pasta /fotos no servidor) ──
 // Convenção: fotos/CODIGO-1.jpg, fotos/CODIGO-2.jpg, ... (até MAX_FOTOS por produto)
 const FOTO_BASE='fotos/';
+// Variantes "sem caixa" usam as fotos do produto original
+const FOTO_ALIAS={"14041": "1404", "14051": "1405", "15081": "1508", "15091": "1509", "29961": "2996", "37071": "3707", "37091": "3709", "37101": "3710", "37081": "3708"};
+function codFoto(cod){return FOTO_ALIAS[cod]||cod;}
 const MAX_FOTOS=8;
 const fotoMax={};   // codigo -> nº de fotos encontradas (0 = nenhuma, usa imagem do catálogo)
 const fotoIdx={};   // codigo -> índice da foto exibida no card
 
-function fotoUrl(cod,n){return FOTO_BASE+cod+'-'+n+'.jpg'}
+function fotoUrl(cod,n){return FOTO_BASE+codFoto(cod)+'-'+n+'.jpg'}
 
 // Descobre quantas fotos existem para um código (probing sequencial, cacheado)
 function descobrirFotos(cod,cb){
