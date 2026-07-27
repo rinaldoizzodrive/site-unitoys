@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: bounzy-pals-v22 -->
+<!-- VERSAO: barra-rodape-v23 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -148,6 +148,21 @@
   .cart-empty-icon{font-size:48px;margin-bottom:12px}
 
   .cart-footer{padding:18px 22px;border-top:2px solid var(--cinza-medio);background:var(--cinza-claro)}
+  .barra-rodape{position:fixed;left:0;right:0;bottom:0;z-index:200;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,0.12);padding:10px 14px calc(10px + env(safe-area-inset-bottom));animation:barraSobe .3s ease}
+  @keyframes barraSobe{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .barra-rodape-inner{max-width:1200px;margin:0 auto}
+  .barra-rodape-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+  .barra-rodape-info{display:flex;flex-direction:column;min-width:0;flex:1}
+  .barra-rodape-total{font-size:19px;font-weight:900;color:var(--preto);line-height:1.1}
+  .barra-rodape-msg{font-size:12px;font-weight:700;color:#b45f00;line-height:1.3;margin-top:2px}
+  .barra-rodape-msg.ok{color:#00753a}
+  .barra-rodape-btn{flex-shrink:0;background:var(--uni-rosa);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap}
+  .barra-rodape-btn:hover{background:var(--uni-rosa-escuro)}
+  .barra-rodape-track{height:9px;background:#f0e3d5;border-radius:6px;overflow:hidden}
+  .barra-rodape-fill{height:100%;width:0;background:linear-gradient(90deg,#FF6B00,#ffa040);border-radius:6px;transition:width .4s ease}
+  .barra-rodape-fill.ok{background:linear-gradient(90deg,#00a651,#00d268)}
+  /* espaço extra no fim da página para a barra não cobrir conteúdo */
+  body.tem-barra{padding-bottom:90px}
   .minimo-aviso{background:#fff3e0;border:1.5px solid #ffd9a8;border-radius:10px;padding:11px 13px;margin-bottom:14px}
   .minimo-aviso.ok{background:#e6f7ee;border-color:#a8e6c4}
   .minimo-texto{font-size:12.5px;font-weight:700;color:#b45f00;margin-bottom:7px;line-height:1.35}
@@ -865,6 +880,32 @@ function toggleCarrinho(cod){
 }
 function salvarCarrinho(){localStorage.setItem('uni_cart',JSON.stringify(carrinho))}
 
+function atualizarBarraRodape(qtdItens, subtotal, atingiuMinimo){
+  const barra=document.getElementById('barraRodape');
+  if(!barra)return;
+  if(qtdItens===0){
+    barra.style.display='none';
+    document.body.classList.remove('tem-barra');
+    return;
+  }
+  barra.style.display='block';
+  document.body.classList.add('tem-barra');
+  document.getElementById('barraTotal').textContent=fmtBRL(subtotal)+' s/ IPI';
+  const fill=document.getElementById('barraFill');
+  const msg=document.getElementById('barraMsg');
+  const pct=Math.min(100,(subtotal/PEDIDO_MINIMO)*100);
+  fill.style.width=pct+'%';
+  if(atingiuMinimo){
+    fill.classList.add('ok');
+    msg.classList.add('ok');
+    msg.textContent='🎉 Frete CIF grátis incluído!';
+  }else{
+    fill.classList.remove('ok');
+    msg.classList.remove('ok');
+    msg.textContent='Faltam '+fmtBRL(PEDIDO_MINIMO-subtotal)+' para frete grátis';
+  }
+}
+
 function atualizarCartUI(){
   const items=Object.values(carrinho);
   document.getElementById('cartCount').textContent=items.length;
@@ -898,6 +939,9 @@ function atualizarCartUI(){
   const btn=document.getElementById('finalizarBtn');
   btn.disabled=items.length===0||!atingiuMinimo;
   btn.textContent=(items.length>0&&!atingiuMinimo)?'Faltam '+fmtBRL(PEDIDO_MINIMO-subtotal)+' para o mínimo':'Finalizar Pedido →';
+
+  // ── Barra fixa no rodapé ──
+  atualizarBarraRodape(items.length, subtotal, atingiuMinimo);
   
   const el=document.getElementById('cartItems');
   if(items.length===0){el.innerHTML='<div class="cart-empty"><div class="cart-empty-icon">🛒</div><p>Seu carrinho está vazio</p></div>';return}
@@ -1331,5 +1375,18 @@ document.getElementById('formModal').addEventListener('click',function(e){if(e.t
 
 init();
 </script>
+<!-- BARRA DE PROGRESSO FIXA NO RODAPÉ -->
+<div id="barraRodape" class="barra-rodape" style="display:none">
+  <div class="barra-rodape-inner">
+    <div class="barra-rodape-topo">
+      <div class="barra-rodape-info">
+        <span class="barra-rodape-total" id="barraTotal">R$ 0,00</span>
+        <span class="barra-rodape-msg" id="barraMsg"></span>
+      </div>
+      <button class="barra-rodape-btn" onclick="abrirCarrinho()">Ver pedido →</button>
+    </div>
+    <div class="barra-rodape-track"><div class="barra-rodape-fill" id="barraFill"></div></div>
+  </div>
+</div>
 </body>
 </html>
