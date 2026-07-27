@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v24 -->
+<!-- VERSAO: barra-rodape-v25 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -1177,6 +1177,7 @@ async function baixarPdfPedido(){
   let totS=0,totI=0;
   function tabelaGrupo(titulo,cor,itens){
     if(itens.length===0)return;
+    let grpS=0,grpI=0;
     const body=itens.map(i=>{
       const pr=getPreco(i.codigo);
       const e=getEstoqueInfo(i.codigo);
@@ -1188,6 +1189,7 @@ async function baixarPdfPedido(){
       if(pr!==null){
         const prF=pr*fatorP,sub=prF*i.qtd,vIpi=sub*ipi;
         totS+=sub;totI+=vIpi;
+        grpS+=sub;grpI+=vIpi;
         return ['',i.codigo,i.nome,i.qtd,fmtBRL(prF),(ipi*100).toFixed(1)+'%',fmtBRL(sub+vIpi),sit];
       }
       return ['',i.codigo,i.nome,i.qtd,'Consulta','-','-',sit];
@@ -1219,7 +1221,13 @@ async function baixarPdfPedido(){
         }
       }
     });
-    y=doc.lastAutoTable.finalY+6;
+    y=doc.lastAutoTable.finalY+3;
+    doc.setFontSize(9);doc.setFont('helvetica','bold');
+    doc.setTextColor(cor[0],cor[1],cor[2]);
+    doc.text('Subtotal '+titulo+' (c/IPI):',140,y);
+    doc.text(fmtBRL(grpS+grpI),196,y,{align:'right'});
+    doc.setTextColor(40,40,40);
+    y+=7;
   }
   tabelaGrupo('PRONTA ENTREGA',[0,117,58],p.grupos.pronta);
   tabelaGrupo('CHEGADA FUTURA',[180,95,0],p.grupos.futura);
@@ -1288,6 +1296,7 @@ async function baixarExcelPedido(){
 
   function grupoExcel(titulo,corArgb,itens){
     if(itens.length===0)return;
+    let grpS=0,grpI=0;
     ws.mergeCells(r,1,r,11);
     const gc=ws.getCell(r,1);
     gc.value=titulo;
@@ -1328,6 +1337,7 @@ async function baixarExcelPedido(){
       if(pr!==null){
         const prF=pr*fatorP,sub=prF*i.qtd,vIpi=sub*ipi;
         totS+=sub;totI+=vIpi;
+        grpS+=sub;grpI+=vIpi;
         ws.getCell(r,5).value=Number(prF.toFixed(2));ws.getCell(r,5).numFmt=moeda;
         ws.getCell(r,6).value=Number(sub.toFixed(2));ws.getCell(r,6).numFmt=moeda;
         ws.getCell(r,7).value=ipi;ws.getCell(r,7).numFmt='0.0%';
@@ -1341,6 +1351,15 @@ async function baixarExcelPedido(){
       for(let c=2;c<=11;c++){ws.getCell(r,c).font={size:9};ws.getCell(r,c).alignment={vertical:'middle'}}
       r++;
     });
+    // Subtotal do grupo (c/IPI)
+    ws.getCell(r,8).value='Subtotal '+titulo.replace(/^[^ ]+ /,'');
+    ws.getCell(r,8).font={bold:true,size:10,color:{argb:'FFFFFFFF'}};
+    ws.getCell(r,8).fill={type:'pattern',pattern:'solid',fgColor:{argb:corArgb}};
+    ws.getCell(r,9).value=Number((grpS+grpI).toFixed(2));
+    ws.getCell(r,9).numFmt=moeda;
+    ws.getCell(r,9).font={bold:true,size:10,color:{argb:'FFFFFFFF'}};
+    ws.getCell(r,9).fill={type:'pattern',pattern:'solid',fgColor:{argb:corArgb}};
+    r++;
     r++;
   }
   grupoExcel('✅ PRONTA ENTREGA','FF00753A',p.grupos.pronta);
