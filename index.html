@@ -483,7 +483,8 @@ const PAGE_IMAGES = {"6": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 
 const ESTADOS = [["AC","Acre"],["AL","Alagoas"],["AP","Amapá"],["AM","Amazonas"],["BA","Bahia"],["CE","Ceará"],["DF","Distrito Federal"],["ES","Espírito Santo"],["GO","Goiás"],["MA","Maranhão"],["MT","Mato Grosso"],["MS","Mato Grosso do Sul"],["MG","Minas Gerais"],["PA","Pará"],["PB","Paraíba"],["PR","Paraná"],["PE","Pernambuco"],["PI","Piauí"],["RJ","Rio de Janeiro"],["RN","Rio Grande do Norte"],["RS","Rio Grande do Sul"],["RO","Rondônia"],["RR","Roraima"],["SC","Santa Catarina"],["SP","São Paulo"],["SE","Sergipe"],["TO","Tocantins"]];
 
-const PEDIDO_MINIMO = 3500; // valor mínimo do pedido (subtotal s/ IPI)
+const MIN_FRETE_GRATIS = 3500; // subtotal s/ IPI que dá frete CIF grátis (apenas informativo)
+const PEDIDO_MINIMO = 0; // valor mínimo obrigatório do pedido (0 = sem mínimo; NÃO bloqueia mais a finalização por causa do frete)
 const FATOR_PADRAO = 0.86; // fator padrão da tabela (PREÇO C/DESC = base × 0,86)
 // ── DESCONTO DE CANAL (definido pelo vendedor via link: ?desconto=4, 8, 12, 16 ou 20) ──
 const DESCONTOS_VALIDOS = [0, 4, 8, 12, 16, 20];
@@ -893,7 +894,7 @@ function atualizarBarraRodape(qtdItens, subtotal, atingiuMinimo){
   document.getElementById('barraTotal').textContent=fmtBRL(subtotal)+' s/ IPI';
   const fill=document.getElementById('barraFill');
   const msg=document.getElementById('barraMsg');
-  const pct=Math.min(100,(subtotal/PEDIDO_MINIMO)*100);
+  const pct=Math.min(100,(subtotal/MIN_FRETE_GRATIS)*100);
   fill.style.width=pct+'%';
   if(atingiuMinimo){
     fill.classList.add('ok');
@@ -902,7 +903,7 @@ function atualizarBarraRodape(qtdItens, subtotal, atingiuMinimo){
   }else{
     fill.classList.remove('ok');
     msg.classList.remove('ok');
-    msg.textContent='Faltam '+fmtBRL(PEDIDO_MINIMO-subtotal)+' para frete grátis';
+    msg.textContent='Faltam '+fmtBRL(MIN_FRETE_GRATIS-subtotal)+' para frete grátis';
   }
 }
 
@@ -920,28 +921,29 @@ function atualizarCartUI(){
   document.getElementById('cartIpi').textContent=fmtBRL(ipiTotal);
   document.getElementById('cartTotal').textContent=fmtBRL(subtotal+ipiTotal)+(temSemPreco?' *':'');
 
-  // ── Pedido mínimo ──
+  // ── Frete grátis (CIF) — apenas informativo, NÃO bloqueia o pedido ──
   const aviso=document.getElementById('minimoAviso');
-  const atingiuMinimo=subtotal>=PEDIDO_MINIMO;
+  const temFreteGratis=subtotal>=MIN_FRETE_GRATIS;
+  const atingiuMinimoReal=subtotal>=PEDIDO_MINIMO; // mínimo obrigatório (0 = sempre atingido)
   if(items.length===0){
     aviso.style.display='none';
-  }else if(!atingiuMinimo){
-    const falta=PEDIDO_MINIMO-subtotal;
+  }else if(!temFreteGratis){
+    const falta=MIN_FRETE_GRATIS-subtotal;
     aviso.style.display='block';
     aviso.classList.remove('ok');
-    document.getElementById('minimoTexto').innerHTML='⚠️ Pedido mínimo: '+fmtBRL(PEDIDO_MINIMO)+' — faltam <strong>'+fmtBRL(falta)+'</strong> para fechar e ganhar <strong>frete grátis</strong>.';
-    document.getElementById('minimoProgresso').style.width=Math.min(100,(subtotal/PEDIDO_MINIMO)*100)+'%';
+    document.getElementById('minimoTexto').innerHTML='🚚 Faltam <strong>'+fmtBRL(falta)+'</strong> para ganhar <strong>frete CIF grátis</strong>. Você já pode fechar o pedido normalmente.';
+    document.getElementById('minimoProgresso').style.width=Math.min(100,(subtotal/MIN_FRETE_GRATIS)*100)+'%';
   }else{
     aviso.style.display='block';
     aviso.classList.add('ok');
-    document.getElementById('minimoTexto').innerHTML='🎉 Parabéns! Pedido acima de '+fmtBRL(PEDIDO_MINIMO)+' — <strong>frete CIF grátis</strong> incluído!';
+    document.getElementById('minimoTexto').innerHTML='🎉 Parabéns! Pedido acima de '+fmtBRL(MIN_FRETE_GRATIS)+' — <strong>frete CIF grátis</strong> incluído!';
   }
   const btn=document.getElementById('finalizarBtn');
-  btn.disabled=items.length===0||!atingiuMinimo;
-  btn.textContent=(items.length>0&&!atingiuMinimo)?'Faltam '+fmtBRL(PEDIDO_MINIMO-subtotal)+' para o mínimo':'Finalizar Pedido →';
+  btn.disabled=items.length===0||!atingiuMinimoReal;
+  btn.textContent=(items.length>0&&!atingiuMinimoReal)?'Faltam '+fmtBRL(PEDIDO_MINIMO-subtotal)+' para o mínimo':'Finalizar Pedido →';
 
   // ── Barra fixa no rodapé ──
-  atualizarBarraRodape(items.length, subtotal, atingiuMinimo);
+  atualizarBarraRodape(items.length, subtotal, temFreteGratis);
   
   const el=document.getElementById('cartItems');
   if(items.length===0){el.innerHTML='<div class="cart-empty"><div class="cart-empty-icon">🛒</div><p>Seu carrinho está vazio</p></div>';return}
@@ -1057,7 +1059,7 @@ function enviarPedido(){
     msg+='\n💰 *Subtotal s/IPI:* '+fmtBRL(subtotal);
     msg+='\n📊 *IPI:* '+fmtBRL(ipiTotal);
     msg+='\n✅ *Total c/IPI:* '+fmtBRL(subtotal+ipiTotal);
-    if(subtotal>=PEDIDO_MINIMO)msg+='\n🚚 *Frete CIF grátis* (pedido acima de '+fmtBRL(PEDIDO_MINIMO)+')';
+    if(subtotal>=MIN_FRETE_GRATIS)msg+='\n🚚 *Frete CIF grátis* (pedido acima de '+fmtBRL(MIN_FRETE_GRATIS)+')';
   }
   if(obs)msg+='\n\n📝 *Obs:* '+obs;
   
