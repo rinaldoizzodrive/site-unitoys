@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v23 -->
+<!-- VERSAO: barra-rodape-v24 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -884,7 +884,9 @@ function salvarCarrinho(){localStorage.setItem('uni_cart',JSON.stringify(carrinh
 function atualizarBarraRodape(qtdItens, subtotal, atingiuMinimo){
   const barra=document.getElementById('barraRodape');
   if(!barra)return;
-  if(qtdItens===0){
+  const cartModal=document.getElementById('cartModal');
+  const cartAberto=cartModal&&cartModal.classList.contains('open');
+  if(qtdItens===0||cartAberto){
     barra.style.display='none';
     document.body.classList.remove('tem-barra');
     return;
@@ -999,8 +1001,8 @@ function removerItem(cod){
   if(b){b.textContent='+ Adicionar';b.classList.remove('added')}
   if(c)c.classList.remove('in-cart');
 }
-function abrirCarrinho(){atualizarCartUI();document.getElementById('cartModal').classList.add('open')}
-function fecharCarrinho(){document.getElementById('cartModal').classList.remove('open')}
+function abrirCarrinho(){document.getElementById('cartModal').classList.add('open');atualizarCartUI()}
+function fecharCarrinho(){document.getElementById('cartModal').classList.remove('open');atualizarCartUI()}
 
 // ── PEDIDO ──
 function abrirFormulario(){fecharCarrinho();document.getElementById('formModal').classList.add('open')}
