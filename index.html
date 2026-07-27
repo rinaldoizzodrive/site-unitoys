@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v25 -->
+<!-- VERSAO: barra-rodape-v26 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -1224,7 +1224,7 @@ async function baixarPdfPedido(){
     y=doc.lastAutoTable.finalY+3;
     doc.setFontSize(9);doc.setFont('helvetica','bold');
     doc.setTextColor(cor[0],cor[1],cor[2]);
-    doc.text('Subtotal '+titulo+' (c/IPI):',140,y);
+    doc.text('Subtotal '+titulo+' (c/IPI):',14,y);
     doc.text(fmtBRL(grpS+grpI),196,y,{align:'right'});
     doc.setTextColor(40,40,40);
     y+=7;
