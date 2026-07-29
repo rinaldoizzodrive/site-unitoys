@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v27 -->
+<!-- VERSAO: barra-rodape-v29 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -678,8 +678,9 @@ function getPreco(codigo){
 }
 function getIpi(codigo){const i=ITENS[codigo];return i?i.ipi:0}
 function getEstoqueInfo(codigo){return ESTOQUE[codigo]||{est:0,cheg:0,prev:''}}
-// Item indisponível: sem estoque (est<=0), sem previsão de chegada (sem data E nada a caminho). Não pode entrar no pedido.
-function estBloqueado(codigo){const e=getEstoqueInfo(codigo);const semData=!(e.prev&&String(e.prev).trim());const semCheg=!(e.cheg>0);return e.est<=0 && semData && semCheg;}
+// Item indisponível para pedido: sem estoque (est<=0) E sem nada a caminho (cheg<=0).
+// Uma data solta em "Previsão" (sem mercadoria vindo) NÃO libera o item.
+function estBloqueado(codigo){const e=getEstoqueInfo(codigo);return e.est<=0 && !(e.cheg>0);}
 function getMult(codigo){const i=ITENS[codigo];return i&&i.mult_venda>0?i.mult_venda:1}
 function getObs(codigo){const i=ITENS[codigo];return i?i.obs:''}
 
@@ -805,8 +806,10 @@ function renderCard(p){
   else stockBadge='<div class="stock-badge stock-ok">'+eInfo.est+' em estoque</div>';
   
   let chegBadge='';
-  if(eInfo.cheg>0&&eInfo.prev)chegBadge='<div class="stock-cheg">📦 +'+eInfo.cheg+' em '+eInfo.prev+'</div>';
+  if(bloqueado)chegBadge='';
+  else if(eInfo.cheg>0&&eInfo.prev)chegBadge='<div class="stock-cheg">📦 +'+eInfo.cheg+' em '+eInfo.prev+'</div>';
   else if(eInfo.cheg>0)chegBadge='<div class="stock-cheg">📦 +'+eInfo.cheg+' a caminho</div>';
+  else if(eInfo.prev)chegBadge='<div class="stock-cheg">🚚 Chegada prevista '+eInfo.prev+'</div>';
   
   let precoHtml;
   if(!regiao)precoHtml='<div class="price-na">Selecione a região 📍</div>';
@@ -829,13 +832,13 @@ function renderCard(p){
     +'<div class="card-meta">'
     +(p.idade?'<span class="meta-tag">👶 '+p.idade+'</span>':'')
     +(mult>1?'<span class="meta-tag">Múltiplo: '+mult+'</span>':'')
-    +(eInfo.cheg>0?'<span class="meta-tag cheg-mob">📦 +'+eInfo.cheg+(eInfo.prev?' em '+eInfo.prev:' a caminho')+'</span>':'')
+    +(bloqueado?'':(eInfo.cheg>0?'<span class="meta-tag cheg-mob">📦 +'+eInfo.cheg+(eInfo.prev?' em '+eInfo.prev:' a caminho')+'</span>':(eInfo.prev?'<span class="meta-tag cheg-mob">🚚 Chegada '+eInfo.prev+'</span>':'')))
     +(obs?'<span class="meta-tag obs">'+obs+'</span>':'')
     +'</div>'
     +'<div class="price-block">'+precoHtml+'</div>'
     +'<div class="card-actions">'
     +(bloqueado
-      ? '<button class="add-cart-btn bloqueado" id="btn_'+p.codigo+'" disabled>⛔ Sem previsão de chegada</button>'
+      ? '<button class="add-cart-btn bloqueado" id="btn_'+p.codigo+'" disabled>⛔ Indisponível para pedido</button>'
       : '<div class="qty-ctrl">'
         +'<button class="qty-btn" onclick="ajustarQtd(\''+p.codigo+'\',-1)">−</button>'
         +'<span class="qty-display" id="qty_'+p.codigo+'">'+(carrinho[p.codigo]?carrinho[p.codigo].qtd:mult)+'</span>'
@@ -978,6 +981,7 @@ function atualizarCartUI(){
     let aviso='';
     if(eInfo.est>0&&i.qtd>eInfo.est)aviso='<div class="cart-item-qty" style="color:#b45f00">⚠️ '+eInfo.est+' un. à pronta entrega + '+(i.qtd-eInfo.est)+' un. na chegada'+(eInfo.prev?' ('+eInfo.prev+')':'')+'</div>';
     else if(eInfo.est<=0&&eInfo.prev)aviso='<div class="cart-item-qty" style="color:#b45f00">⏳ Previsão de chegada: '+eInfo.prev+'</div>';
+    else if(eInfo.est<=0&&eInfo.cheg>0)aviso='<div class="cart-item-qty" style="color:#b45f00">📦 A caminho ('+eInfo.cheg+' un., sem data)</div>';
     else if(eInfo.est<=0)aviso='<div class="cart-item-qty" style="color:#E8192C">Sob encomenda — sem previsão</div>';
     return '<div class="cart-item">'
       +(img?'<img class="cart-item-photo" src="'+img+'">':'<div class="cart-item-icon">'+i.icon+'</div>')
