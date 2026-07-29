@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v26 -->
+<!-- VERSAO: barra-rodape-v27 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -122,6 +122,8 @@
   .add-cart-btn:hover{background:var(--uni-azul-escuro)}
   .add-cart-btn.added{background:var(--verde);color:#fff}
   .add-cart-btn:disabled{background:var(--cinza-medio);color:#999;cursor:not-allowed}
+  .add-cart-btn.bloqueado{background:#f3e3e3;color:#c0392b;border:1px solid #e0b4b4;font-size:12px;cursor:not-allowed}
+  .add-cart-btn.bloqueado:hover{background:#f3e3e3}
 
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;justify-content:flex-end}
   .modal-overlay.open{display:flex}
@@ -676,6 +678,8 @@ function getPreco(codigo){
 }
 function getIpi(codigo){const i=ITENS[codigo];return i?i.ipi:0}
 function getEstoqueInfo(codigo){return ESTOQUE[codigo]||{est:0,cheg:0,prev:''}}
+// Item indisponível: sem estoque (est<=0), sem previsão de chegada (sem data E nada a caminho). Não pode entrar no pedido.
+function estBloqueado(codigo){const e=getEstoqueInfo(codigo);const semData=!(e.prev&&String(e.prev).trim());const semCheg=!(e.cheg>0);return e.est<=0 && semData && semCheg;}
 function getMult(codigo){const i=ITENS[codigo];return i&&i.mult_venda>0?i.mult_venda:1}
 function getObs(codigo){const i=ITENS[codigo];return i?i.obs:''}
 
@@ -791,6 +795,7 @@ function renderCard(p){
   const mult=getMult(p.codigo);
   const obs=getObs(p.codigo);
   const sem=eInfo.est<=0;
+  const bloqueado=estBloqueado(p.codigo);
   
   const ehLancamento = p.lancamento===true;
   let lancBadge = ehLancamento ? '<div class="lanc-badge">🆕 Lançamento</div>' : '';
@@ -829,13 +834,15 @@ function renderCard(p){
     +'</div>'
     +'<div class="price-block">'+precoHtml+'</div>'
     +'<div class="card-actions">'
-    +'<div class="qty-ctrl">'
-    +'<button class="qty-btn" onclick="ajustarQtd(\''+p.codigo+'\',-1)">−</button>'
-    +'<span class="qty-display" id="qty_'+p.codigo+'">'+(carrinho[p.codigo]?carrinho[p.codigo].qtd:mult)+'</span>'
-    +'<button class="qty-btn" onclick="ajustarQtd(\''+p.codigo+'\',1)">+</button>'
-    +'</div>'
-    +'<button class="add-cart-btn'+(inCart?' added':'')+'" id="btn_'+p.codigo+'" onclick="toggleCarrinho(\''+p.codigo+'\')">'
-    +(inCart?'✓ No carrinho':'+ Adicionar')+'</button>'
+    +(bloqueado
+      ? '<button class="add-cart-btn bloqueado" id="btn_'+p.codigo+'" disabled>⛔ Sem previsão de chegada</button>'
+      : '<div class="qty-ctrl">'
+        +'<button class="qty-btn" onclick="ajustarQtd(\''+p.codigo+'\',-1)">−</button>'
+        +'<span class="qty-display" id="qty_'+p.codigo+'">'+(carrinho[p.codigo]?carrinho[p.codigo].qtd:mult)+'</span>'
+        +'<button class="qty-btn" onclick="ajustarQtd(\''+p.codigo+'\',1)">+</button>'
+        +'</div>'
+        +'<button class="add-cart-btn'+(inCart?' added':'')+'" id="btn_'+p.codigo+'" onclick="toggleCarrinho(\''+p.codigo+'\')">'
+        +(inCart?'✓ No carrinho':'+ Adicionar')+'</button>')
     +'</div>'
     +'</div></div>';
 }
@@ -854,6 +861,7 @@ function irPagina(n){paginaAtual=n;renderProdutos();window.scrollTo({top:200,beh
 
 // ── QUANTIDADE (respeita múltiplo de venda) ──
 function ajustarQtd(cod,delta){
+  if(estBloqueado(cod))return;
   const el=document.getElementById('qty_'+cod);if(!el)return;
   const mult=getMult(cod);
   let v=parseInt(el.textContent)+delta*mult;
@@ -865,6 +873,11 @@ function ajustarQtd(cod,delta){
 // ── CARRINHO ──
 function toggleCarrinho(cod){
   const p=PRODUTOS.find(x=>x.codigo===cod);if(!p)return;
+  // Se está bloqueado (sem estoque e sem previsão) e ainda não está no carrinho, impede a inclusão
+  if(!carrinho[cod] && estBloqueado(cod)){
+    alert('Este item está sem estoque e sem previsão de chegada, por isso não pode ser incluído no pedido.');
+    return;
+  }
   if(carrinho[cod]){
     delete carrinho[cod];
     const b=document.getElementById('btn_'+cod),c=document.getElementById('card_'+cod);
@@ -910,6 +923,11 @@ function atualizarBarraRodape(qtdItens, subtotal, atingiuMinimo){
 }
 
 function atualizarCartUI(){
+  // Rede de segurança: remove itens indisponíveis (sem estoque e sem previsão) que
+  // tenham entrado por link/localStorage antigo, antes de qualquer cálculo.
+  let limpou=false;
+  Object.keys(carrinho).forEach(cod=>{if(estBloqueado(cod)){delete carrinho[cod];limpou=true;}});
+  if(limpou)salvarCarrinho();
   const items=Object.values(carrinho);
   document.getElementById('cartCount').textContent=items.length;
   let subtotal=0,ipiTotal=0,temSemPreco=false;
