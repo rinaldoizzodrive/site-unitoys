@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v29 -->
+<!-- VERSAO: barra-rodape-v31 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -122,6 +122,8 @@
   .add-cart-btn:hover{background:var(--uni-azul-escuro)}
   .add-cart-btn.added{background:var(--verde);color:#fff}
   .add-cart-btn:disabled{background:var(--cinza-medio);color:#999;cursor:not-allowed}
+  .promo-badge{position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#E8192C,#ff6b35);color:#fff;font-weight:800;font-size:11px;padding:5px 10px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.25);z-index:3;letter-spacing:.3px}
+  .price-promo{margin-top:4px;font-size:11.5px;font-weight:800;color:#E8192C}
   .add-cart-btn.bloqueado{background:#f3e3e3;color:#c0392b;border:1px solid #e0b4b4;font-size:12px;cursor:not-allowed}
   .add-cart-btn.bloqueado:hover{background:#f3e3e3}
 
@@ -498,6 +500,12 @@ let descontoCanal = 0;
 })();
 function getFator(){ return (1 - descontoCanal/100) * FATOR_PADRAO; }
 
+// ── PROMOÇÃO TEMPORÁRIA (PROMO20): 20% adicional de desconto em itens selecionados ──
+// Entra na fase de desconto (com o canal, antes do frete). Ao encerrar a promo, esvaziar PROMO_ITENS.
+const PROMO_DESC = 0.20;
+const PROMO_ITENS = new Set(['1801','1802','2138','2140','2636','2637','2910','3043','3212','3261','3262','3285','3286','3385','3386','3670','3673','3680','3712','3713','3742','3743']);
+function isPromo(codigo){ return PROMO_ITENS.has(String(codigo)); }
+
 const catIcons = {'Bounzy Pals':'🆕','Elétricos':'⚡','Bikes':'🚲','Balanças e Andadores':'🛶','Motorizados':'🏍️','Veículos':'🚗','Triciclos':'🛺','Passeio':'🛵','Patins':'⛸️','Patinetes':'🛴','Skates':'🛹','Proteção':'🛡️'};
 
 const PRODUTOS = PRODUTOS_RAW.map(p => ({...p, nome: p.nome.replace(/\s+/g,' ').trim(), icon: catIcons[p.categoria]||'🎁'}));
@@ -674,7 +682,10 @@ function getPreco(codigo){
   // fallback: interior usa capital se não houver
   if(base===undefined && regiao.regiao==='Interior') base = p[regiao.uf+'|Capital'];
   if(base===undefined) return null;
-  return base * getFator();
+  // Cálculo de preço MANTIDO como em produção (base × fator de canal × 0,86).
+  // PROMO20: apenas 20% adicional (multiplicativo) nos itens em promoção.
+  const promo = isPromo(codigo) ? (1 - PROMO_DESC) : 1;
+  return base * getFator() * promo;
 }
 function getIpi(codigo){const i=ITENS[codigo];return i?i.ipi:0}
 function getEstoqueInfo(codigo){return ESTOQUE[codigo]||{est:0,cheg:0,prev:''}}
@@ -800,6 +811,8 @@ function renderCard(p){
   
   const ehLancamento = p.lancamento===true;
   let lancBadge = ehLancamento ? '<div class="lanc-badge">🆕 Lançamento</div>' : '';
+  const ehPromo = isPromo(p.codigo);
+  let promoBadge = ehPromo ? '<div class="promo-badge">🔥 PROMO −20%</div>' : '';
   let stockBadge;
   if(eInfo.est<=0)stockBadge='<div class="stock-badge stock-out">Sem estoque</div>';
   else if(eInfo.est<10)stockBadge='<div class="stock-badge stock-baixo">Últimas '+eInfo.est+' un.</div>';
@@ -814,11 +827,11 @@ function renderCard(p){
   let precoHtml;
   if(!regiao)precoHtml='<div class="price-na">Selecione a região 📍</div>';
   else if(preco===null)precoHtml='<div class="price-na">Preço sob consulta</div>';
-  else precoHtml='<div class="price-main">'+fmtBRL(preco)+'</div><div class="price-sub">+ IPI '+(ipi*100).toFixed(1).replace('.',',')+'% · '+fmtBRL(preco*(1+ipi))+' c/ IPI</div>';
+  else precoHtml='<div class="price-main">'+fmtBRL(preco)+'</div><div class="price-sub">+ IPI '+(ipi*100).toFixed(1).replace('.',',')+'% · '+fmtBRL(preco*(1+ipi))+' c/ IPI</div>'+(ehPromo?'<div class="price-promo">🔥 20% de desconto PROMO já incluído</div>':'');
   
   return '<div class="product-card'+(inCart?' in-cart':'')+(sem?' esgotado':'')+'" id="card_'+p.codigo+'">'
     +'<div class="card-image-area">'
-    +lancBadge
+    +lancBadge+promoBadge
     +'<img class="product-photo" id="img_'+p.codigo+'" src="'+(img||fotoUrl(p.codigo,1))+'" alt="'+p.nome+'" loading="lazy" onclick="abrirLightbox(\''+p.codigo+'\')" onerror="this.style.display=\'none\';var ic=document.getElementById(\'ic_'+p.codigo+'\');if(ic)ic.style.display=\'flex\'">'
     +'<div class="cat-icon" id="ic_'+p.codigo+'" style="display:'+(img?'none':'flex')+'">'+p.icon+'</div>'
     +'<button class="foto-nav foto-prev" onclick="mudarFoto(event,\''+p.codigo+'\',-1)">‹</button>'
@@ -986,7 +999,7 @@ function atualizarCartUI(){
     return '<div class="cart-item">'
       +(img?'<img class="cart-item-photo" src="'+img+'">':'<div class="cart-item-icon">'+i.icon+'</div>')
       +'<div class="cart-item-info">'
-      +'<div class="cart-item-name">'+i.nome+'</div>'
+      +'<div class="cart-item-name">'+i.nome+(isPromo(i.codigo)?' <span style="color:#E8192C;font-weight:800">🔥 −20%</span>':'')+'</div>'
       +'<div class="cart-item-cod">Cód. '+i.codigo+' · '+i.qtd+' un.</div>'
       +'<div class="cart-item-price">'+(pr!==null?fmtBRL(pr*i.qtd)+' <span class="cart-item-qty">+IPI '+(getIpi(i.codigo)*100).toFixed(1).replace('.',',')+'%</span>':'Sob consulta')+'</div>'
       +aviso
@@ -1057,7 +1070,7 @@ function enviarPedido(){
   function addItem(i){
     n++;
     const pr=getPreco(i.codigo);
-    msg+=n+'. Cód. '+i.codigo+' — '+i.nome+' ('+i.qtd+'x)';
+    msg+=n+'. Cód. '+i.codigo+' — '+i.nome+(isPromo(i.codigo)?' 🔥PROMO-20%':'')+' ('+i.qtd+'x)';
     if(pr!==null){
       const prPag=pr*fatorPag;
       const ipi=getIpi(i.codigo);
