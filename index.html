@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v32 -->
+<!-- VERSAO: barra-rodape-v33 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -507,6 +507,15 @@ const PROMO_DESC = 0.20;
 const PROMO_ITENS = new Set(['1801','1802','2138','2140','2636','2637','2910','3043','3212','3261','3262','3285','3286','3385','3386','3670','3673','3680','3712','3713','3742','3743']);
 function isPromo(codigo){ return PROMO_ITENS.has(String(codigo)); }
 
+// ── FRETE NO PREÇO ──────────────────────────────────────────────────────────
+// true  = comportamento atual (frete CIF embutido no preço unitário, por região)
+// false = alinhado ao HPRO (usa a base pura nacional SP|Capital; sem frete no preço)
+// Dá pra listar exceções em FRETE_ESTADOS (UFs que DEVEM manter frete no preço).
+const INCLUIR_FRETE_NO_PRECO = true;
+const FRETE_ESTADOS = new Set([]); // ex.: ['AC','AM','RR','AP'] mantêm frete mesmo se o global for false
+function usaFrete(uf){ return INCLUIR_FRETE_NO_PRECO || FRETE_ESTADOS.has(uf); }
+
+
 const catIcons = {'Bounzy Pals':'🆕','Elétricos':'⚡','Bikes':'🚲','Balanças e Andadores':'🛶','Motorizados':'🏍️','Veículos':'🚗','Triciclos':'🛺','Passeio':'🛵','Patins':'⛸️','Patinetes':'🛴','Skates':'🛹','Proteção':'🛡️'};
 
 const PRODUTOS = PRODUTOS_RAW.map(p => ({...p, nome: p.nome.replace(/\s+/g,' ').trim(), icon: catIcons[p.categoria]||'🎁'}));
@@ -683,6 +692,8 @@ function getPreco(codigo){
   // fallback: interior usa capital se não houver
   if(base===undefined && regiao.regiao==='Interior') base = p[regiao.uf+'|Capital'];
   if(base===undefined) return null;
+  // Frete no preço: se desligado para este estado, usa a base pura nacional (SP|Capital) = sem frete
+  if(!usaFrete(regiao.uf) && p['SP|Capital']!==undefined) base = p['SP|Capital'];
   // Cálculo de preço MANTIDO como em produção (base × fator de canal × 0,86).
   // PROMO20: apenas 20% adicional (multiplicativo) nos itens em promoção.
   const promo = isPromo(codigo) ? (1 - PROMO_DESC) : 1;
