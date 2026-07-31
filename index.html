@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v33 -->
+<!-- VERSAO: barra-rodape-v34 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -511,7 +511,7 @@ function isPromo(codigo){ return PROMO_ITENS.has(String(codigo)); }
 // true  = comportamento atual (frete CIF embutido no preço unitário, por região)
 // false = alinhado ao HPRO (usa a base pura nacional SP|Capital; sem frete no preço)
 // Dá pra listar exceções em FRETE_ESTADOS (UFs que DEVEM manter frete no preço).
-const INCLUIR_FRETE_NO_PRECO = true;
+const INCLUIR_FRETE_NO_PRECO = false;
 const FRETE_ESTADOS = new Set([]); // ex.: ['AC','AM','RR','AP'] mantêm frete mesmo se o global for false
 function usaFrete(uf){ return INCLUIR_FRETE_NO_PRECO || FRETE_ESTADOS.has(uf); }
 
