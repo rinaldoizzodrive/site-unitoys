@@ -114,7 +114,9 @@
   .qty-ctrl{display:flex;align-items:center;border:2px solid var(--cinza-medio);border-radius:8px;overflow:hidden}
   .qty-btn{background:var(--cinza-claro);border:none;width:34px;height:32px;font-size:17px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background .15s}
   .qty-btn:hover{background:var(--cinza-medio)}
-  .qty-display{flex:1;text-align:center;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px}
+  .qty-display{flex:1;text-align:center;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;border:none;background:transparent;width:100%;min-width:0;padding:0;outline:none;-moz-appearance:textfield;appearance:textfield}
+  .qty-display::-webkit-outer-spin-button,.qty-display::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .qty-display:focus{background:#eef7fc;border-radius:6px}
 
   .add-cart-btn{width:100%;padding:10px;border:none;border-radius:10px;background:var(--uni-azul);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:13.5px;cursor:pointer;transition:all .2s}
   .add-cart-btn:hover{background:var(--uni-azul-escuro)}
@@ -807,7 +809,7 @@ function renderProdutos(){
   grid.innerHTML=items.map(renderCard).join('');
   items.forEach(p=>{
     const qty=document.getElementById('qty_'+p.codigo);
-    if(qty&&carrinho[p.codigo])qty.textContent=carrinho[p.codigo].qtd;
+    if(qty&&carrinho[p.codigo])qty.value=carrinho[p.codigo].qtd;
     initFotoCard(p.codigo);
   });
   renderPagination(total);
@@ -893,7 +895,7 @@ function renderCard(p){
     +'<div class="card-actions">'
     +'<div class="qty-ctrl">'
     +'<button class="qty-btn" onclick="ajustarQtd(\''+p.codigo+'\',-1)">−</button>'
-    +'<span class="qty-display" id="qty_'+p.codigo+'">'+(carrinho[p.codigo]?carrinho[p.codigo].qtd:mult)+'</span>'
+    +'<input class="qty-display" type="number" inputmode="numeric" min="'+mult+'" step="'+mult+'" id="qty_'+p.codigo+'" value="'+(carrinho[p.codigo]?carrinho[p.codigo].qtd:mult)+'" onchange="digitarQtd(\''+p.codigo+'\')" onclick="this.select()">'
     +'<button class="qty-btn" onclick="ajustarQtd(\''+p.codigo+'\',1)">+</button>'
     +'</div>'
     +'<button class="add-cart-btn'+(inCart?' added':'')+'" id="btn_'+p.codigo+'" onclick="toggleCarrinho(\''+p.codigo+'\')">'
@@ -960,9 +962,19 @@ function irPagina(n){paginaAtual=n;renderProdutos();window.scrollTo({top:200,beh
 function ajustarQtd(cod,delta){
   const el=document.getElementById('qty_'+cod);if(!el)return;
   const mult=getMult(cod);
-  let v=parseInt(el.textContent)+delta*mult;
+  let v=(parseInt(el.value)||mult)+delta*mult;
   if(v<mult)v=mult;
-  el.textContent=v;
+  el.value=v;
+  if(carrinho[cod]){carrinho[cod].qtd=v;salvarCarrinho();atualizarCartUI()}
+}
+// Quantidade digitada: valida, arredonda para o múltiplo de venda e sincroniza o carrinho
+function digitarQtd(cod){
+  const el=document.getElementById('qty_'+cod);if(!el)return;
+  const mult=getMult(cod);
+  let v=parseInt(el.value);
+  if(isNaN(v)||v<mult)v=mult;
+  if(v%mult!==0)v=Math.ceil(v/mult)*mult;
+  el.value=v;
   if(carrinho[cod]){carrinho[cod].qtd=v;salvarCarrinho();atualizarCartUI()}
 }
 
@@ -976,7 +988,7 @@ function toggleCarrinho(cod){
     if(c)c.classList.remove('in-cart');
   }else{
     const qEl=document.getElementById('qty_'+cod);
-    carrinho[cod]={codigo:cod,nome:p.nome,categoria:p.categoria,icon:p.icon,qtd:qEl?parseInt(qEl.textContent):getMult(cod)};
+    carrinho[cod]={codigo:cod,nome:p.nome,categoria:p.categoria,icon:p.icon,qtd:qEl?(parseInt(qEl.value)||getMult(cod)):getMult(cod)};
     const b=document.getElementById('btn_'+cod),c=document.getElementById('card_'+cod);
     if(b){b.textContent='✓ No carrinho';b.classList.add('added')}
     if(c)c.classList.add('in-cart');
