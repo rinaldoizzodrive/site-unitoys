@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v44 -->
+<!-- VERSAO: barra-rodape-v45 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -513,7 +513,7 @@ function getFator(){ return (1 - descontoCanal/100) * FATOR_PADRAO; }
 // ── PROMOÇÃO TEMPORÁRIA (PROMO20): 20% adicional de desconto em itens selecionados ──
 // Entra na fase de desconto (com o canal, antes do frete). Ao encerrar a promo, esvaziar PROMO_ITENS.
 const PROMO_DESC = 0.20;
-const PROMO_ITENS = new Set(['1801','1802','2138','2140','2636','2637','2910','3043','3212','3261','3262','3285','3286','3385','3386','3670','3673','3680','3712','3713','3742','3743']);
+const PROMO_ITENS = new Set([]); // PROMO20 encerrada — Set esvaziado (desliga preço, selo, tag carrinho e WhatsApp)
 function isPromo(codigo){ return PROMO_ITENS.has(String(codigo)); }
 
 // ── REBAIXA DE PREÇOS (10/08): itens com preço reduzido na tabela base ──
