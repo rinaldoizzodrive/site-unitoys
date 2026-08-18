@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- VERSAO: barra-rodape-v45 -->
+<!-- VERSAO: barra-rodape-v46 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitoys 2026 — Pedido Online</title>
@@ -472,7 +472,23 @@ const ESTOQUE_FALLBACK = {"3726": {"est": -412, "cheg": 418, "prev": "30/08/2026
 
 // Estoque "ao vivo" - tenta carregar de estoque.json (atualizado pelo HPRO); senão usa o fallback embutido
 let ESTOQUE = ESTOQUE_FALLBACK;
-let ESTOQUE_INFO = {origem:'embutido', data:null};
+let ESTOQUE_INFO = {origem:'embutido', data:null, hora:null};
+// Texto amigável da última atualização de estoque
+function textoAtualizacao(dataStr, horaStr){
+  if(!dataStr) return '';
+  const hh = horaStr ? ' às '+horaStr : '';
+  const p = String(dataStr).split('/');
+  if(p.length!==3) return 'Estoque atualizado em '+dataStr+hh;
+  const d = new Date(+p[2], +p[1]-1, +p[0]);
+  if(isNaN(d.getTime())) return 'Estoque atualizado em '+dataStr+hh;
+  const hoje = new Date();
+  const zero = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const dias = Math.round((zero - d)/86400000);
+  if(dias===0) return 'Estoque atualizado hoje'+hh;
+  if(dias===1) return 'Estoque atualizado ontem'+hh;
+  return 'Estoque atualizado em '+dataStr+hh;
+}
+
 async function carregarEstoqueExterno(){
   try{
     const resp = await fetch('estoque.json?t='+Date.now());  // t= evita cache
@@ -480,16 +496,16 @@ async function carregarEstoqueExterno(){
     const dados = await resp.json();
     if(dados && dados.estoque && typeof dados.estoque==='object'){
       ESTOQUE = dados.estoque;
-      ESTOQUE_INFO = {origem:'arquivo', data:dados.atualizado||null};
+      ESTOQUE_INFO = {origem:'arquivo', data:dados.atualizado||null, hora:dados.hora||null};
     }else if(dados && typeof dados==='object'){
       // formato simples: {codigo:{est,cheg,prev}}
       ESTOQUE = dados;
-      ESTOQUE_INFO = {origem:'arquivo', data:null};
+      ESTOQUE_INFO = {origem:'arquivo', data:null, hora:null};
     }
   }catch(e){
     // mantém o fallback embutido
     ESTOQUE = ESTOQUE_FALLBACK;
-    ESTOQUE_INFO = {origem:'embutido', data:null};
+    ESTOQUE_INFO = {origem:'embutido', data:null, hora:null};
   }
 }
 const CODE_PAGES = {"3677": 6, "3678": 7, "3006": 8, "3216": 8, "3004": 9, "3214": 9, "3215": 10, "3003": 11, "3646": 12, "3647": 13, "3746": 14, "3747": 14, "3679": 15, "3645": 16, "3043": 17, "3212": 17, "3110": 18, "3748": 19, "3680": 20, "3681": 21, "3658": 22, "3682": 23, "2561": 24, "2562": 24, "3220": 25, "3109": 26, "3108": 27, "3137": 27, "3252": 28, "3654": 29, "3655": 29, "3385": 30, "3255": 31, "3656": 32, "3657": 32, "3676": 33, "3659": 34, "3642": 35, "3662": 36, "3663": 36, "3639": 37, "3249": 38, "3250": 38, "3409": 39, "3410": 39, "3666": 40, "3261": 41, "3262": 41, "3669": 42, "3603": 43, "3604": 43, "3605": 44, "3606": 44, "3609": 45, "3670": 46, "3226": 47, "3671": 48, "3672": 49, "3673": 50, "3613": 51, "3614": 51, "3674": 52, "2910": 53, "3607": 54, "3608": 54, "2905": 55, "3116": 55, "3675": 56, "3749": 57, "3750": 57, "3653": 58, "3113": 59, "3399": 60, "3686": 62, "3685": 63, "3693": 64, "3692": 65, "1763": 66, "2138": 67, "3278": 68, "3282": 69, "3697": 69, "2658": 70, "2659": 70, "2660": 71, "2661": 71, "3018": 72, "3019": 73, "1506": 74, "1172": 74, "1220": 75, "3695": 76, "3277": 77, "3691": 78, "2139": 79, "2140": 79, "3287": 80, "3687": 82, "3688": 82, "3698": 83, "3699": 83, "3095": 84, "3096": 84, "3372": 85, "3373": 85, "3371": 86, "3283": 87, "3284": 87, "3649": 88, "3650": 88, "3751": 89, "3752": 89, "3290": 90, "3291": 90, "2895": 91, "3716": 92, "3753": 93, "3273": 95, "3704": 98, "3705": 99, "3706": 100, "14041": 101, "14051": 101, "15081": 102, "15091": 102, "29961": 103, "37071": 103, "37091": 104, "37101": 104, "3714": 105, "3715": 106, "3703": 107, "3651": 108, "3652": 108, "3711": 109, "3712": 111, "3713": 112, "1801": 113, "1802": 114, "3724": 116, "3725": 116, "3334": 117, "3335": 117, "3736": 118, "3337": 119, "3726": 120, "3727": 120, "3338": 121, "3339": 121, "3728": 122, "3729": 122, "3732": 123, "3733": 123, "3722": 124, "3723": 124, "3720": 125, "3721": 125, "3416": 126, "2656": 127, "2657": 127, "3730": 128, "3731": 128, "3007": 129, "3008": 129, "1489": 132, "1791": 132, "1397": 133, "1513": 133, "2649": 134, "3013": 135, "3197": 136, "2647": 137, "3700": 138, "3701": 138, "3012": 139, "1502": 140, "1503": 140, "1438": 141, "1574": 144, "1575": 144, "2636": 145, "2637": 145, "2631": 146, "2632": 146, "2638": 147, "2639": 147, "3307": 148, "3308": 148, "3084": 149, "3085": 149, "1812": 150, "3754": 151, "3314": 152, "3315": 152, "3017": 153, "3739": 154, "3740": 154, "1180": 156, "1770": 157, "1042": 158, "2122": 159, "3742": 161, "3743": 161, "1792": 162, "3741": 162, "1369": 163, "1383": 163};
@@ -758,7 +774,7 @@ async function init(){
   if(ESTOQUE_INFO.data){
     const ei=document.getElementById('estoqueInfo');
     ei.style.display='block';
-    ei.textContent='📦 Estoque atualizado em '+ESTOQUE_INFO.data;
+    ei.textContent='📦 '+textoAtualizacao(ESTOQUE_INFO.data, ESTOQUE_INFO.hora);
   }
   renderProdutos();
   atualizarCartUI();
