@@ -769,6 +769,19 @@ function getPreco(codigo){
 }
 function getIpi(codigo){const i=ITENS[codigo];return i?i.ipi:0}
 function getEstoqueInfo(codigo){return ESTOQUE[codigo]||{est:0,cheg:0,prev:''}}
+// ── FAIXAS DE ESTOQUE — estoque-faixa-v1 ──
+// Exibe faixas ("+300") no lugar do número exato, para não expor ao mercado
+// o volume de compra e a distribuição. A lógica interna (bloqueio, split de
+// pronta entrega x chegada) continua usando o número real.
+// Para voltar a mostrar o número exato, trocar para false.
+const MASCARAR_ESTOQUE = true;
+const FAIXAS_ESTOQUE = [1000, 500, 300, 100, 50, 10];
+function faixaEstoque(n){
+  n = Math.max(0, Math.round(Number(n) || 0));
+  if(!MASCARAR_ESTOQUE || n < 10) return '+' + n;
+  for(const piso of FAIXAS_ESTOQUE){ if(n >= piso) return '+' + piso; }
+  return '+' + n;
+}
 // Item indisponível para pedido: sem estoque (est<=0) E sem nada a caminho (cheg<=0).
 // Uma data solta em "Previsão" (sem mercadoria vindo) NÃO libera o item.
 function estBloqueado(codigo){const e=getEstoqueInfo(codigo);return e.est<=0 && !(e.cheg>0);}
@@ -900,12 +913,12 @@ function renderCard(p){
   let stockBadge;
   if(eInfo.est<=0)stockBadge='<div class="stock-badge stock-out">Sem estoque</div>';
   else if(eInfo.est<10)stockBadge='<div class="stock-badge stock-baixo">Últimas '+eInfo.est+' un.</div>';
-  else stockBadge='<div class="stock-badge stock-ok">'+eInfo.est+' em estoque</div>';
+  else stockBadge='<div class="stock-badge stock-ok">'+faixaEstoque(eInfo.est)+' em estoque</div>';
   
   let chegBadge='';
   if(bloqueado)chegBadge='';
-  else if(eInfo.cheg>0&&eInfo.prev)chegBadge='<div class="stock-cheg">📦 +'+eInfo.cheg+' em '+eInfo.prev+'</div>';
-  else if(eInfo.cheg>0)chegBadge='<div class="stock-cheg">📦 +'+eInfo.cheg+' a caminho</div>';
+  else if(eInfo.cheg>0&&eInfo.prev)chegBadge='<div class="stock-cheg">📦 '+faixaEstoque(eInfo.cheg)+' em '+eInfo.prev+'</div>';
+  else if(eInfo.cheg>0)chegBadge='<div class="stock-cheg">📦 '+faixaEstoque(eInfo.cheg)+' a caminho</div>';
   else if(eInfo.prev)chegBadge='<div class="stock-cheg">🚚 Chegada prevista '+eInfo.prev+'</div>';
   
   let precoHtml;
@@ -929,7 +942,7 @@ function renderCard(p){
     +'<div class="card-meta">'
     +(p.idade?'<span class="meta-tag">👶 '+p.idade+'</span>':'')
     +(mult>1?'<span class="meta-tag">Múltiplo: '+mult+'</span>':'')
-    +(bloqueado?'':(eInfo.cheg>0?'<span class="meta-tag cheg-mob">📦 +'+eInfo.cheg+(eInfo.prev?' em '+eInfo.prev:' a caminho')+'</span>':(eInfo.prev?'<span class="meta-tag cheg-mob">🚚 Chegada '+eInfo.prev+'</span>':'')))
+    +(bloqueado?'':(eInfo.cheg>0?'<span class="meta-tag cheg-mob">📦 '+faixaEstoque(eInfo.cheg)+(eInfo.prev?' em '+eInfo.prev:' a caminho')+'</span>':(eInfo.prev?'<span class="meta-tag cheg-mob">🚚 Chegada '+eInfo.prev+'</span>':'')))
     +(obs?'<span class="meta-tag obs">'+obs+'</span>':'')
     +'</div>'
     +'<div class="price-block">'+precoHtml+'</div>'
@@ -1095,7 +1108,7 @@ function atualizarCartUI(){
     let aviso='';
     if(eInfo.est>0&&i.qtd>eInfo.est)aviso='<div class="cart-item-qty" style="color:#b45f00">⚠️ '+eInfo.est+' un. à pronta entrega + '+(i.qtd-eInfo.est)+' un. na chegada'+(eInfo.prev?' ('+eInfo.prev+')':'')+'</div>';
     else if(eInfo.est<=0&&eInfo.prev)aviso='<div class="cart-item-qty" style="color:#b45f00">⏳ Previsão de chegada: '+eInfo.prev+'</div>';
-    else if(eInfo.est<=0&&eInfo.cheg>0)aviso='<div class="cart-item-qty" style="color:#b45f00">📦 A caminho ('+eInfo.cheg+' un., sem data)</div>';
+    else if(eInfo.est<=0&&eInfo.cheg>0)aviso='<div class="cart-item-qty" style="color:#b45f00">📦 A caminho ('+faixaEstoque(eInfo.cheg)+' un., sem data)</div>';
     else if(eInfo.est<=0)aviso='<div class="cart-item-qty" style="color:#E8192C">Sob encomenda — sem previsão</div>';
     return '<div class="cart-item">'
       +(img?'<img class="cart-item-photo" src="'+img+'">':'<div class="cart-item-icon">'+i.icon+'</div>')
