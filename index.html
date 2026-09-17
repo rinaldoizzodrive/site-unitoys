@@ -564,10 +564,12 @@ let descontoCanal = 0;
 })();
 function getFator(){ return (1 - descontoCanal/100) * FATOR_PADRAO; }
 
-// ── PROMOÇÃO TEMPORÁRIA (PROMO20): 20% adicional de desconto em itens selecionados ──
+// ── PROMOÇÃO TEMPORÁRIA: desconto adicional em itens selecionados ──
 // Entra na fase de desconto (com o canal, antes do frete). Ao encerrar a promo, esvaziar PROMO_ITENS.
-const PROMO_DESC = 0.20;
-const PROMO_ITENS = new Set([]); // PROMO20 encerrada — Set esvaziado (desliga preço, selo, tag carrinho e WhatsApp)
+const PROMO_DESC = 0.10;
+const PROMO_PCT = Math.round(PROMO_DESC*100); // usado nos selos/textos — nunca digitar o % na mao
+// PROMO SUPER-CAR (temporaria): 18 codigos, 10% adicional. Ao encerrar, esvaziar o Set.
+const PROMO_ITENS = new Set(['1404','1405','1508','1509','2996','3707','3708','3709','3710','14041','14051','15081','15091','29961','37071','37081','37091','37101']);
 function isPromo(codigo){ return PROMO_ITENS.has(String(codigo)); }
 
 // ── REBAIXA DE PREÇOS (10/08): itens com preço reduzido na tabela base ──
@@ -763,7 +765,7 @@ function getPreco(codigo){
   // Frete no preço: se desligado para este estado, usa a base pura nacional (SP|Capital) = sem frete
   if(!usaFrete(regiao.uf) && p['SP|Capital']!==undefined) base = p['SP|Capital'];
   // Cálculo de preço MANTIDO como em produção (base × fator de canal × 0,86).
-  // PROMO20: apenas 20% adicional (multiplicativo) nos itens em promoção.
+  // PROMO: desconto adicional (multiplicativo, ver PROMO_DESC) nos itens em promoção.
   const promo = isPromo(codigo) ? (1 - PROMO_DESC) : 1;
   return base * getFator() * promo;
 }
@@ -907,7 +909,7 @@ function renderCard(p){
   const ehLancamento = p.lancamento===true;
   let lancBadge = ehLancamento ? '<div class="lanc-badge">🆕 Lançamento</div>' : '';
   const ehPromo = isPromo(p.codigo);
-  let promoBadge = ehPromo ? '<div class="promo-badge">🔥 PROMO −20%</div>' : '';
+  let promoBadge = ehPromo ? '<div class="promo-badge">🔥 PROMO −'+PROMO_PCT+'%</div>' : '';
   const ehBaixou = isBaixou(p.codigo);
   let baixouBadge = ehBaixou ? '<div class="baixou-badge">📉 BAIXOU O PREÇO</div>' : '';
   let stockBadge;
@@ -924,7 +926,7 @@ function renderCard(p){
   let precoHtml;
   if(!regiao)precoHtml='<div class="price-na">Selecione a região 📍</div>';
   else if(preco===null)precoHtml='<div class="price-na">Preço sob consulta</div>';
-  else precoHtml='<div class="price-main">'+fmtBRL(preco)+'</div><div class="price-sub">+ IPI '+(ipi*100).toFixed(1).replace('.',',')+'% · '+fmtBRL(preco*(1+ipi))+' c/ IPI</div>'+(ehPromo?'<div class="price-promo">🔥 20% de desconto PROMO já incluído</div>':'');
+  else precoHtml='<div class="price-main">'+fmtBRL(preco)+'</div><div class="price-sub">+ IPI '+(ipi*100).toFixed(1).replace('.',',')+'% · '+fmtBRL(preco*(1+ipi))+' c/ IPI</div>'+(ehPromo?'<div class="price-promo">🔥 '+PROMO_PCT+'% de desconto PROMO já incluído</div>':'');
   
   return '<div class="product-card'+(inCart?' in-cart':'')+(sem?' esgotado':'')+'" id="card_'+p.codigo+'">'
     +'<div class="card-image-area">'
@@ -1113,7 +1115,7 @@ function atualizarCartUI(){
     return '<div class="cart-item">'
       +(img?'<img class="cart-item-photo" src="'+img+'">':'<div class="cart-item-icon">'+i.icon+'</div>')
       +'<div class="cart-item-info">'
-      +'<div class="cart-item-name">'+i.nome+(isPromo(i.codigo)?' <span style="color:#E8192C;font-weight:800">🔥 −20%</span>':'')+'</div>'
+      +'<div class="cart-item-name">'+i.nome+(isPromo(i.codigo)?' <span style="color:#E8192C;font-weight:800">🔥 −'+PROMO_PCT+'%</span>':'')+'</div>'
       +'<div class="cart-item-cod">Cód. '+i.codigo+' · '+i.qtd+' un.</div>'
       +'<div class="cart-item-price">'+(pr!==null?fmtBRL(pr*i.qtd)+' <span class="cart-item-qty">+IPI '+(getIpi(i.codigo)*100).toFixed(1).replace('.',',')+'%</span>':'Sob consulta')+'</div>'
       +aviso
@@ -1184,7 +1186,7 @@ function enviarPedido(){
   function addItem(i){
     n++;
     const pr=getPreco(i.codigo);
-    msg+=n+'. Cód. '+i.codigo+' — '+i.nome+(isPromo(i.codigo)?' 🔥PROMO-20%':'')+' ('+i.qtd+'x)';
+    msg+=n+'. Cód. '+i.codigo+' — '+i.nome+(isPromo(i.codigo)?' 🔥PROMO-'+PROMO_PCT+'%':'')+' ('+i.qtd+'x)';
     if(pr!==null){
       const prPag=pr*fatorPag;
       const ipi=getIpi(i.codigo);

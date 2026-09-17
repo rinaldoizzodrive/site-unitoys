@@ -581,10 +581,12 @@ let descontoCanal = 0;
 let precosNegociados = {};
 function getFator(){ return (1 - descontoCanal/100) * FATOR_PADRAO; }
 
-// ── PROMOÇÃO TEMPORÁRIA (PROMO20): 20% adicional de desconto em itens selecionados ──
+// ── PROMOÇÃO TEMPORÁRIA: desconto adicional em itens selecionados ──
 // Entra na fase de desconto (com o canal, antes do frete). Ao encerrar a promo, esvaziar PROMO_ITENS.
-const PROMO_DESC = 0.20;
-const PROMO_ITENS = new Set([]); // PROMO20 encerrada — Set esvaziado (desliga preço, selo, tag carrinho e WhatsApp)
+const PROMO_DESC = 0.10;
+const PROMO_PCT = Math.round(PROMO_DESC*100); // usado nos selos/textos — nunca digitar o % na mao
+// PROMO SUPER-CAR (temporaria): 18 codigos, 10% adicional. Ao encerrar, esvaziar o Set.
+const PROMO_ITENS = new Set(['1404','1405','1508','1509','2996','3707','3708','3709','3710','14041','14051','15081','15091','29961','37071','37081','37091','37101']);
 function isPromo(codigo){ return PROMO_ITENS.has(String(codigo)); }
 
 // ── REBAIXA DE PREÇOS (10/08): itens com preço reduzido na tabela base ──
@@ -599,7 +601,7 @@ function getPrecoTabela(codigo){
   let base = p[regiao.uf+'|'+regiao.regiao];
   if(base===undefined && regiao.regiao==='Interior') base = p[regiao.uf+'|Capital'];
   if(base===undefined) return null;
-  // PROMO20: 20% adicional (multiplicativo) nos itens em promoção — mesma regra do webpedidos normal.
+  // PROMO: desconto adicional (multiplicativo, ver PROMO_DESC) nos itens em promoção — mesma regra do webpedidos normal.
   const promo = isPromo(codigo) ? (1 - PROMO_DESC) : 1;
   return base * getFator() * promo;
 }
@@ -909,7 +911,7 @@ function renderCard(p){
   let lancBadge = ehLancamento ? '<div class="lanc-badge">🆕 Lançamento</div>' : '';
   if(p.offline===true) lancBadge += '<div class="off-badge">🏪 Off-Line</div>';
   const ehPromo = isPromo(p.codigo);
-  let promoBadge = ehPromo ? '<div class="promo-badge">🔥 PROMO −20%</div>' : '';
+  let promoBadge = ehPromo ? '<div class="promo-badge">🔥 PROMO −'+PROMO_PCT+'%</div>' : '';
   const ehBaixou = isBaixou(p.codigo);
   let baixouBadge = ehBaixou ? '<div class="baixou-badge">📉 BAIXOU O PREÇO</div>' : '';
   let stockBadge;
@@ -1139,7 +1141,7 @@ function atualizarCartUI(){
     return '<div class="cart-item">'
       +(img?'<img class="cart-item-photo" src="'+img+'">':'<div class="cart-item-icon">'+i.icon+'</div>')
       +'<div class="cart-item-info">'
-      +'<div class="cart-item-name">'+i.nome+(isPromo(i.codigo)?' <span style="color:#E8192C;font-weight:800">🔥 −20%</span>':'')+'</div>'
+      +'<div class="cart-item-name">'+i.nome+(isPromo(i.codigo)?' <span style="color:#E8192C;font-weight:800">🔥 −'+PROMO_PCT+'%</span>':'')+'</div>'
       +'<div class="cart-item-cod">Cód. '+i.codigo+' · '+i.qtd+' un.</div>'
       +'<div class="cart-item-price">'+(pr!==null?fmtBRL(pr*i.qtd)+' <span class="cart-item-qty">+IPI '+(getIpi(i.codigo)*100).toFixed(1).replace('.',',')+'%</span>':'Sob consulta')+'</div>'
       +aviso
@@ -1211,7 +1213,7 @@ function enviarPedido(){
     n++;
     const pr=getPreco(i.codigo);
     const ehNeg=precosNegociados[i.codigo]!==undefined&&precosNegociados[i.codigo]!==null;
-    msg+=n+'. Cód. '+i.codigo+' — '+i.nome+(isPromo(i.codigo)?' 🔥PROMO-20%':'')+' ('+i.qtd+'x)';
+    msg+=n+'. Cód. '+i.codigo+' — '+i.nome+(isPromo(i.codigo)?' 🔥PROMO-'+PROMO_PCT+'%':'')+' ('+i.qtd+'x)';
     if(pr!==null){
       const prPag=pr*fatorPag;
       const ipi=getIpi(i.codigo);
