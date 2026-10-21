@@ -552,7 +552,7 @@ const PAGE_IMAGES = {"6": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 const ESTADOS = [["AC","Acre"],["AL","Alagoas"],["AP","Amapá"],["AM","Amazonas"],["BA","Bahia"],["CE","Ceará"],["DF","Distrito Federal"],["ES","Espírito Santo"],["GO","Goiás"],["MA","Maranhão"],["MT","Mato Grosso"],["MS","Mato Grosso do Sul"],["MG","Minas Gerais"],["PA","Pará"],["PB","Paraíba"],["PR","Paraná"],["PE","Pernambuco"],["PI","Piauí"],["RJ","Rio de Janeiro"],["RN","Rio Grande do Norte"],["RS","Rio Grande do Sul"],["RO","Rondônia"],["RR","Roraima"],["SC","Santa Catarina"],["SP","São Paulo"],["SE","Sergipe"],["TO","Tocantins"]];
 
 const MIN_FRETE_GRATIS = 3500; // subtotal s/ IPI que dá frete CIF grátis (apenas informativo)
-const PEDIDO_MINIMO = 0; // valor mínimo obrigatório do pedido (0 = sem mínimo; NÃO bloqueia mais a finalização por causa do frete)
+const PEDIDO_MINIMO = 3500; // valor mínimo obrigatório do pedido — BLOQUEIA o botão Finalizar abaixo disso (0 = sem mínimo)
 const FATOR_PADRAO = 0.86; // fator padrão da tabela (PREÇO C/DESC = base × 0,86)
 // ── DESCONTO DE CANAL (definido pelo vendedor via link: ?desconto=4, 8, 12, 16 ou 20) ──
 const DESCONTOS_VALIDOS = [0, 4, 8, 12, 16, 20];
@@ -1042,11 +1042,11 @@ function atualizarBarraRodape(qtdItens, subtotal, atingiuMinimo){
   if(atingiuMinimo){
     fill.classList.add('ok');
     msg.classList.add('ok');
-    msg.textContent='🎉 Frete CIF grátis incluído!';
+    msg.textContent='🎉 Pedido mínimo atingido — frete CIF grátis!';
   }else{
     fill.classList.remove('ok');
     msg.classList.remove('ok');
-    msg.textContent='Faltam '+fmtBRL(MIN_FRETE_GRATIS-subtotal)+' para frete grátis';
+    msg.textContent='Faltam '+fmtBRL(PEDIDO_MINIMO-subtotal)+' para o pedido mínimo';
   }
 }
 
@@ -1074,7 +1074,7 @@ function atualizarCartUI(){
   document.getElementById('cartIpi').textContent=fmtBRL(ipiTotal);
   document.getElementById('cartTotal').textContent=fmtBRL(subtotal+ipiTotal)+(temSemPreco?' *':'');
 
-  // ── Frete grátis (CIF) — apenas informativo, NÃO bloqueia o pedido ──
+  // ── Pedido mínimo (PEDIDO_MINIMO) — BLOQUEIA a finalização. Frete CIF grátis a partir de MIN_FRETE_GRATIS ──
   const aviso=document.getElementById('minimoAviso');
   const temFreteGratis=subtotal>=MIN_FRETE_GRATIS;
   const atingiuMinimoReal=subtotal>=PEDIDO_MINIMO; // mínimo obrigatório (0 = sempre atingido)
@@ -1084,12 +1084,12 @@ function atualizarCartUI(){
     const falta=MIN_FRETE_GRATIS-subtotal;
     aviso.style.display='block';
     aviso.classList.remove('ok');
-    document.getElementById('minimoTexto').innerHTML='🚚 Faltam <strong>'+fmtBRL(falta)+'</strong> para ganhar <strong>frete CIF grátis</strong>. Você já pode fechar o pedido normalmente.';
+    document.getElementById('minimoTexto').innerHTML='🛒 Faltam <strong>'+fmtBRL(falta)+'</strong> para atingir o <strong>pedido mínimo de '+fmtBRL(PEDIDO_MINIMO)+'</strong>. O pedido só pode ser finalizado a partir desse valor.';
     document.getElementById('minimoProgresso').style.width=Math.min(100,(subtotal/MIN_FRETE_GRATIS)*100)+'%';
   }else{
     aviso.style.display='block';
     aviso.classList.add('ok');
-    document.getElementById('minimoTexto').innerHTML='🎉 Parabéns! Pedido acima de '+fmtBRL(MIN_FRETE_GRATIS)+' — <strong>frete CIF grátis</strong> incluído!';
+    document.getElementById('minimoTexto').innerHTML='🎉 Pedido mínimo atingido — <strong>frete CIF grátis</strong> incluído!';
   }
   const btn=document.getElementById('finalizarBtn');
   btn.disabled=items.length===0||!atingiuMinimoReal;
