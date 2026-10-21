@@ -585,8 +585,9 @@ function getFator(){ return (1 - descontoCanal/100) * FATOR_PADRAO; }
 // Entra na fase de desconto (com o canal, antes do frete). Ao encerrar a promo, esvaziar PROMO_ITENS.
 const PROMO_DESC = 0.10;
 const PROMO_PCT = Math.round(PROMO_DESC*100); // usado nos selos/textos — nunca digitar o % na mao
-// PROMO SUPER-CAR (temporaria): 18 codigos, 10% adicional. Ao encerrar, esvaziar o Set.
-const PROMO_ITENS = new Set(['1404','1405','1508','1509','2996','3707','3708','3709','3710','14041','14051','15081','15091','29961','37071','37081','37091','37101']);
+// PROMO SUPER-CAR ENCERRADA em 21/10/2026 — Set esvaziado (desliga preco, selo, tag do carrinho e WhatsApp).
+// Para reativar, recolocar os codigos no Set e conferir o PROMO_DESC.
+const PROMO_ITENS = new Set([]);
 function isPromo(codigo){ return PROMO_ITENS.has(String(codigo)); }
 
 // ── REBAIXA DE PREÇOS (10/08): itens com preço reduzido na tabela base ──
