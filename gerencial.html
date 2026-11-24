@@ -591,8 +591,16 @@ const PROMO_ITENS = new Set([]);
 function isPromo(codigo){ return PROMO_ITENS.has(String(codigo)); }
 
 // ── REBAIXA DE PREÇOS (10/08): itens com preço reduzido na tabela base ──
-const BAIXOU_ITENS = new Set(['1397','1438','1502','1503','1513','2638','2639','2649','2658','2659','2895','3003','3012','3018','3084','3085','3095','3096','3214','3252','3273','3274','3275','3282','3283','3284','3287','3314','3315','3334','3335','3337','3338','3339','3416','3639','3640','3641','3647','3649','3650','3651','3652','3654','3655','3656','3657','3658','3659','3675','3676','3682','3685','3686','3687','3688','3691','3692','3693','3697','3698','3699','3700','3701','3703','3711','3714','3715','3720','3721','3722','3723','3724','3725','3726','3727','3728','3729','3730','3731','3732','3733','3739','3740','3746','3747','3749','3750','2561','2562','2905','3108','3109','3116','3603','3604','3605','3606','3607','3608','3748']);
+const BAIXOU_ITENS = new Set([]); // esvaziado em 24/11/2026 — selos antigos trocados pelos de PROMO (ver SELO_PROMO)
 function isBaixou(codigo){ return BAIXOU_ITENS.has(String(codigo)) && !isPromo(codigo); }
+// ── SELOS DE PROMOÇÃO — campanha de 24/11/2026 (selo-promo-v1) ──
+// APENAS VISUAL. O desconto já está no preço base do HPro e vem pelo robô, então
+// este selo NÃO altera valor nenhum. NÃO confundir com PROMO_ITENS, que desconta
+// de novo por cima — usar os dois no mesmo item cobraria o desconto em dobro.
+// 17 itens a 15% e 8 a 20%. Para encerrar a campanha, esvaziar o mapa abaixo.
+const SELO_PROMO = {'10001':15, '1172':15, '3697':15, '3282':15, '3644':15, '3643':15, '3642':15, '3273':15, '3739':15, '3740':15, '2824':15, '3274':15, '10004':15, '10003':15, '10002':15, '3693':15, '3292':15, '3607':20, '3608':20, '3609':20, '3711':20, '3613':20, '3675':20, '3113':20, '3645':20};
+function seloPromoPct(codigo){ return SELO_PROMO[String(codigo)] || 0; }
+
 
 // preço de tabela (com desconto de canal) - a referência
 function getPrecoTabela(codigo){
@@ -912,7 +920,9 @@ function renderCard(p){
   let lancBadge = ehLancamento ? '<div class="lanc-badge">🆕 Lançamento</div>' : '';
   if(p.offline===true) lancBadge += '<div class="off-badge">🏪 Off-Line</div>';
   const ehPromo = isPromo(p.codigo);
-  let promoBadge = ehPromo ? '<div class="promo-badge">🔥 PROMO −'+PROMO_PCT+'%</div>' : '';
+  const pctSelo = seloPromoPct(p.codigo);
+  let promoBadge = ehPromo ? '<div class="promo-badge">🔥 PROMO −'+PROMO_PCT+'%</div>'
+    : (pctSelo ? '<div class="promo-badge">🔥 PROMO −'+pctSelo+'%</div>' : '');
   const ehBaixou = isBaixou(p.codigo);
   let baixouBadge = ehBaixou ? '<div class="baixou-badge">📉 BAIXOU O PREÇO</div>' : '';
   let stockBadge;
