@@ -598,7 +598,7 @@ function isBaixou(codigo){ return BAIXOU_ITENS.has(String(codigo)) && !isPromo(c
 // este selo NÃO altera valor nenhum. NÃO confundir com PROMO_ITENS, que desconta
 // de novo por cima — usar os dois no mesmo item cobraria o desconto em dobro.
 // 17 itens a 15% e 8 a 20%. Para encerrar a campanha, esvaziar o mapa abaixo.
-const SELO_PROMO = {'10001':15, '1172':15, '3697':15, '3282':15, '3644':15, '3643':15, '3642':15, '3273':15, '3739':15, '3740':15, '2824':15, '3274':15, '10004':15, '10003':15, '10002':15, '3693':15, '3292':15, '3607':20, '3608':20, '3609':20, '3711':20, '3613':20, '3675':20, '3113':20, '3645':20};
+const SELO_PROMO = {'10001':15, '3697':15, '3282':15, '3644':15, '3643':15, '3642':15, '3273':15, '3739':15, '3740':15, '2824':15, '3274':15, '10004':15, '10003':15, '10002':15, '3693':15, '3607':20, '3608':20, '3609':20, '3711':20, '3613':20, '3675':20, '3113':20, '3645':20};
 function seloPromoPct(codigo){ return SELO_PROMO[String(codigo)] || 0; }
 
 
